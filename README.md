@@ -1,9 +1,31 @@
 ## Run
 
-```
+### Important:
+
+ 
+```Zookeper``` directory should be in ```C:\``` - main directory 
+of disk on which this project is located: ```C:\Zookeeper``` 
+
+Then, in separate terminals:
+
+```bash
 mvn clean package
 
 .\run.bat
+```
+
+```bash
+.\run_serv1.bat
+
+.\run_serv2.bat
+
+.\run_serv3.bat
+
+.\run_cli1.bat
+
+.\run_cli2.bat
+
+.\run_cli3.bat
 ```
 
 #### Zadanie domowe

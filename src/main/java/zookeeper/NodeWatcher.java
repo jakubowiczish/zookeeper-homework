@@ -6,14 +6,12 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
-import util.ConsoleColor;
 
 import java.util.List;
 
 import static org.apache.zookeeper.KeeperException.Code.NONODE;
 import static org.apache.zookeeper.Watcher.Event.EventType.*;
 import static org.apache.zookeeper.Watcher.Event.KeeperState.Expired;
-import static util.ColouredPrinter.printColoured;
 
 public class NodeWatcher implements Watcher {
 
@@ -33,6 +31,7 @@ public class NodeWatcher implements Watcher {
         this.nodeListener = nodeListener;
 
         zooKeeper = new ZooKeeper(connectString, sessionTimeout, this);
+        checkExistence();
     }
 
     @Override
@@ -68,9 +67,9 @@ public class NodeWatcher implements Watcher {
             }
         } catch (KeeperException e) {
             closeEvent();
-            printColoured(e.getLocalizedMessage(), ConsoleColor.RED_BOLD);
+            System.out.println(e.getLocalizedMessage());
         } catch (InterruptedException e) {
-            printColoured(e.getLocalizedMessage(), ConsoleColor.RED_BOLD);
+            System.out.println(e.getLocalizedMessage());
         }
     }
 
@@ -92,9 +91,9 @@ public class NodeWatcher implements Watcher {
 
         } catch (KeeperException e) {
             closeEvent();
-            printColoured(e.getLocalizedMessage(), ConsoleColor.RED_BOLD);
+            System.out.println(e.getLocalizedMessage());
         } catch (InterruptedException e) {
-            printColoured(e.getLocalizedMessage(), ConsoleColor.RED_BOLD);
+            System.out.println(e.getLocalizedMessage());
         }
     }
 
@@ -105,10 +104,10 @@ public class NodeWatcher implements Watcher {
         } catch (KeeperException e) {
             if (e.code() != NONODE) {
                 closeEvent();
-                printColoured(e.getLocalizedMessage(), ConsoleColor.RED_BOLD);
+                System.out.println(e.getLocalizedMessage());
             }
         } catch (InterruptedException e) {
-            printColoured(e.getLocalizedMessage(), ConsoleColor.RED_BOLD);
+            System.out.println(e.getLocalizedMessage());
         }
     }
 

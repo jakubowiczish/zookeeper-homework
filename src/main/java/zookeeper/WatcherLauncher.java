@@ -1,13 +1,8 @@
 package zookeeper;
 
-import util.ConsoleColor;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Scanner;
-
-import static util.ColouredPrinter.printColoured;
-import static util.ColouredPrinter.printlnColoured;
 
 public class WatcherLauncher implements Launcher {
 
@@ -30,6 +25,8 @@ public class WatcherLauncher implements Launcher {
         final NodeListener nodeListener = createNodeListener();
         final NodeWatcher nodeWatcher = new NodeWatcher(connectString, node, nodeListener);
 
+        System.out.println("App started running");
+
         handleUserInput(nodeWatcher);
     }
 
@@ -41,10 +38,10 @@ public class WatcherLauncher implements Launcher {
                 .redirectError(ProcessBuilder.Redirect.INHERIT);
 
         try {
-            printlnColoured("Starting program", ConsoleColor.CYAN_BOLD);
+            System.out.println("Starting program");
             process = processBuilder.start();
         } catch (IOException e) {
-            printlnColoured(e.getLocalizedMessage(), ConsoleColor.RED_BOLD);
+            System.out.println(e.getLocalizedMessage());
         }
 
     }
@@ -52,7 +49,7 @@ public class WatcherLauncher implements Launcher {
     public final void stopProcess() {
         if (process == null) return;
 
-        printlnColoured("Stopping program...", ConsoleColor.CYAN_BOLD);
+        System.out.println("Stopping program...");
         process.destroy();
         process = null;
     }
@@ -63,22 +60,22 @@ public class WatcherLauncher implements Launcher {
             @Override
             public void changed(boolean exists) {
                 if (exists) {
-                    printlnColoured("Node still exists!", ConsoleColor.GREEN_BOLD);
+                    System.out.println("Node still exists!");
                     startProcess();
                 } else {
-                    printlnColoured("Node does not exist anymore!", ConsoleColor.BLUE_BOLD);
+                    System.out.println("Node does not exist anymore!");
                     stopProcess();
                 }
             }
 
             @Override
             public void childrenChanged(List<String> children) {
-                printColoured(children.size() + " is the number of children for node: " + node, ConsoleColor.MAGENTA_BOLD);
+                System.out.println(children.size() + " is the number of children for node: " + node);
             }
 
             @Override
             public void closing() {
-                printColoured("Lost connection, stopping...", ConsoleColor.RED_BOLD);
+                System.out.println("Lost connection, stopping...");
                 System.exit(-1);
             }
         };

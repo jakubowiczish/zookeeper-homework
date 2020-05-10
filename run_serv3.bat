@@ -1,0 +1,1 @@
+cd bin && .\zkServer2.cmd \zoo3.cfg
