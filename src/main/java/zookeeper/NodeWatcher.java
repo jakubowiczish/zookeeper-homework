@@ -10,6 +10,7 @@ import org.apache.zookeeper.data.Stat;
 import java.util.List;
 import java.util.Objects;
 
+import static java.lang.System.out;
 import static org.apache.zookeeper.KeeperException.Code.NONODE;
 import static org.apache.zookeeper.Watcher.Event.EventType.*;
 import static org.apache.zookeeper.Watcher.Event.KeeperState.Expired;
@@ -67,7 +68,7 @@ public class NodeWatcher implements Watcher {
     }
 
     private void printTreeForNode(String node) {
-        System.out.println(node);
+        out.println(node);
 
         try {
             final Stat stat = zooKeeper.exists(node, false);
@@ -81,9 +82,9 @@ public class NodeWatcher implements Watcher {
             }
         } catch (KeeperException e) {
             closeEvent();
-            System.out.println(e.getLocalizedMessage());
+            out.println(e.getLocalizedMessage());
         } catch (InterruptedException e) {
-            System.out.println(e.getLocalizedMessage());
+            out.println(e.getLocalizedMessage());
         }
     }
 
@@ -105,9 +106,9 @@ public class NodeWatcher implements Watcher {
 
         } catch (KeeperException e) {
             closeEvent();
-            System.out.println(e.getLocalizedMessage());
+            out.println(e.getLocalizedMessage());
         } catch (InterruptedException e) {
-            System.out.println(e.getLocalizedMessage());
+            out.println(e.getLocalizedMessage());
         }
     }
 
@@ -119,10 +120,10 @@ public class NodeWatcher implements Watcher {
         } catch (KeeperException e) {
             if (e.code() != NONODE) {
                 closeEvent();
-                System.out.println(e.getLocalizedMessage());
+                out.println(e.getLocalizedMessage());
             }
         } catch (InterruptedException e) {
-            System.out.println(e.getLocalizedMessage());
+            out.println(e.getLocalizedMessage());
         }
     }
 

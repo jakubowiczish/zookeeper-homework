@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Scanner;
 
+import static java.lang.System.out;
+
+
 public class WatcherLauncher implements Launcher {
 
     private static final String WATCHER_PREFIX = "[WATCHER_INFO] ";
@@ -27,7 +30,7 @@ public class WatcherLauncher implements Launcher {
         final NodeListener nodeListener = createNodeListener();
         final NodeWatcher nodeWatcher = new NodeWatcher(connectString, node, nodeListener);
 
-        System.out.println("App started running!");
+        out.println("App started running!");
 
         handleUserInput(nodeWatcher);
     }
@@ -40,10 +43,10 @@ public class WatcherLauncher implements Launcher {
                 .redirectError(ProcessBuilder.Redirect.INHERIT);
 
         try {
-            System.out.println("Starting program");
+            out.println("Starting program");
             process = processBuilder.start();
         } catch (IOException e) {
-            System.out.println(e.getLocalizedMessage());
+            out.println(e.getLocalizedMessage());
         }
 
     }
@@ -51,7 +54,7 @@ public class WatcherLauncher implements Launcher {
     public final void stopProcess() {
         if (process == null) return;
 
-        System.out.println("Stopping recently opened program...");
+        out.println("Stopping recently opened program...");
         process.destroy();
         process = null;
     }
@@ -62,22 +65,22 @@ public class WatcherLauncher implements Launcher {
             @Override
             public void changed(boolean exists) {
                 if (exists) {
-                    System.out.println(WATCHER_PREFIX + "Node still exists!");
+                    out.println(WATCHER_PREFIX + "Node still exists!");
                     startProcess();
                 } else {
-                    System.out.println(WATCHER_PREFIX + "Node does not exist anymore!");
+                    out.println(WATCHER_PREFIX + "Node does not exist anymore!");
                     stopProcess();
                 }
             }
 
             @Override
             public void childrenChanged(List<String> children) {
-                System.out.println(WATCHER_PREFIX + children.size() + " is the number of children for node: " + node);
+                out.println(WATCHER_PREFIX + children.size() + " is the number of children for node: " + node);
             }
 
             @Override
             public void closed() {
-                System.out.println(WATCHER_PREFIX + "Lost connection, stopping...");
+                out.println(WATCHER_PREFIX + "Lost connection, stopping...");
                 System.exit(-1);
             }
         };
@@ -90,7 +93,7 @@ public class WatcherLauncher implements Launcher {
             final String inputLine = scanner.nextLine();
 
             if ("tree".equals(inputLine)) {
-                System.out.println("Printing the tree of nodes below:");
+                out.println("Printing the tree of nodes below:");
                 nodeWatcher.printTreeForNode();
             } else if ("exit".equals(inputLine)) {
                 stopProcess();
