@@ -8,6 +8,7 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 
 import java.util.List;
+import java.util.Objects;
 
 import static org.apache.zookeeper.KeeperException.Code.NONODE;
 import static org.apache.zookeeper.Watcher.Event.EventType.*;
@@ -17,10 +18,10 @@ public class NodeWatcher implements Watcher {
 
     private static final int sessionTimeout = 5000;
 
-    private final ZooKeeper zooKeeper;
-
     private final String node;
     private final NodeListener nodeListener;
+
+    private final ZooKeeper zooKeeper;
 
     @SneakyThrows
     public NodeWatcher(final String connectString,
@@ -31,39 +32,52 @@ public class NodeWatcher implements Watcher {
         this.nodeListener = nodeListener;
 
         zooKeeper = new ZooKeeper(connectString, sessionTimeout, this);
-        checkExistence();
+        watchForExistingNode();
     }
 
     @Override
-    public void process(WatchedEvent watchedEvent) {
-        if (watchedEvent.getType() == None && watchedEvent.getState() == Expired) {
+    public final void process(WatchedEvent watchedEvent) {
+        if (isTypeNoneAndStateExpired(watchedEvent)) {
             closeEvent();
-        } else if (watchedEvent.getType() == NodeCreated || watchedEvent.getType() == NodeDeleted) {
-            if (node.equals(watchedEvent.getPath())) {
-                checkExistence();
+        } else if (isTypeNodeCreatedOrNodeDeleted(watchedEvent)) {
+            if (Objects.equals(node, watchedEvent.getPath())) {
+                watchForExistingNode();
             }
-        } else if (watchedEvent.getType() == NodeChildrenChanged) {
-            if (node.equals(watchedEvent.getPath())) {
-                checkChildren();
+        } else if (isTypeNodeChildrenChanged(watchedEvent)) {
+            if (Objects.equals(node, watchedEvent.getPath())) {
+                watchForChildren();
             }
         }
     }
 
-    public void printTree() {
-        printTree(this.node);
+    public final void printTreeForNode() {
+        printTreeForNode(this.node);
     }
 
-    private void printTree(String node) {
+    private boolean isTypeNoneAndStateExpired(WatchedEvent watchedEvent) {
+        return watchedEvent.getType() == None && watchedEvent.getState() == Expired;
+    }
+
+    private boolean isTypeNodeCreatedOrNodeDeleted(WatchedEvent watchedEvent) {
+        return watchedEvent.getType() == NodeCreated || watchedEvent.getType() == NodeDeleted;
+    }
+
+    private boolean isTypeNodeChildrenChanged(WatchedEvent watchedEvent) {
+        return watchedEvent.getType() == NodeChildrenChanged;
+    }
+
+    private void printTreeForNode(String node) {
         System.out.println(node);
+
         try {
-            Stat stat = zooKeeper.exists(node, false);
+            final Stat stat = zooKeeper.exists(node, false);
 
             if (stat != null) {
                 List<String> children = zooKeeper.getChildren(node, false);
 
                 children.stream()
                         .map(child -> node + "/" + child)
-                        .forEach(this::printTree);
+                        .forEach(this::printTreeForNode);
             }
         } catch (KeeperException e) {
             closeEvent();
@@ -75,10 +89,10 @@ public class NodeWatcher implements Watcher {
 
 
     private void closeEvent() {
-        nodeListener.closing();
+        nodeListener.closed();
     }
 
-    private void checkExistence() {
+    private void watchForExistingNode() {
         try {
             final Stat stat = zooKeeper.exists(node, true);
 
@@ -86,7 +100,7 @@ public class NodeWatcher implements Watcher {
             nodeListener.changed(isStatNotNull);
 
             if (stat != null) {
-                checkChildren();
+                watchForChildren();
             }
 
         } catch (KeeperException e) {
@@ -97,10 +111,11 @@ public class NodeWatcher implements Watcher {
         }
     }
 
-    private void checkChildren() {
+    private void watchForChildren() {
         try {
             List<String> children = zooKeeper.getChildren(node, true);
             nodeListener.childrenChanged(children);
+
         } catch (KeeperException e) {
             if (e.code() != NONODE) {
                 closeEvent();

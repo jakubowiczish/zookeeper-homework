@@ -6,6 +6,8 @@ import java.util.Scanner;
 
 public class WatcherLauncher implements Launcher {
 
+    private static final String WATCHER_PREFIX = "[WATCHER_INFO] ";
+
     private final String connectString;
     private final String node;
     private final String[] commands;
@@ -49,7 +51,7 @@ public class WatcherLauncher implements Launcher {
     public final void stopProcess() {
         if (process == null) return;
 
-        System.out.println("Stopping program...");
+        System.out.println("Stopping recently opened program...");
         process.destroy();
         process = null;
     }
@@ -60,36 +62,36 @@ public class WatcherLauncher implements Launcher {
             @Override
             public void changed(boolean exists) {
                 if (exists) {
-                    System.out.println("Node still exists!");
+                    System.out.println(WATCHER_PREFIX + "Node still exists!");
                     startProcess();
                 } else {
-                    System.out.println("Node does not exist anymore!");
+                    System.out.println(WATCHER_PREFIX + "Node does not exist anymore!");
                     stopProcess();
                 }
             }
 
             @Override
             public void childrenChanged(List<String> children) {
-                System.out.println(children.size() + " is the number of children for node: " + node);
+                System.out.println(WATCHER_PREFIX + children.size() + " is the number of children for node: " + node);
             }
 
             @Override
-            public void closing() {
-                System.out.println("Lost connection, stopping...");
+            public void closed() {
+                System.out.println(WATCHER_PREFIX + "Lost connection, stopping...");
                 System.exit(-1);
             }
         };
     }
 
     private void handleUserInput(NodeWatcher nodeWatcher) {
-        Scanner scanner = new Scanner(System.in);
+        final Scanner scanner = new Scanner(System.in);
 
         while (true) {
-            String line = scanner.nextLine();
+            final String line = scanner.nextLine();
 
             if ("tree".equals(line)) {
                 System.out.println("Printing tree:");
-                nodeWatcher.printTree();
+                nodeWatcher.printTreeForNode();
             } else if ("exit".equals(line)) {
                 stopProcess();
                 System.exit(0);

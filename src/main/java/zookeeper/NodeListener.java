@@ -8,5 +8,5 @@ public interface NodeListener {
 
     void childrenChanged(List<String> children);
 
-    void closing();
+    void closed();
 }
