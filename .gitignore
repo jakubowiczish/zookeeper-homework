@@ -14,3 +14,4 @@
 */.gradle/*
 *.lst
 pom.properties
+*.next
