@@ -75,7 +75,7 @@ public class WatcherLauncher implements Launcher {
 
             @Override
             public void childrenChanged(List<String> children) {
-                out.println(WATCHER_PREFIX + children.size() + " is the number of children for node: " + node);
+                out.println(WATCHER_PREFIX + "There are " + children.size() + " children of node: " + node);
             }
 
             @Override
