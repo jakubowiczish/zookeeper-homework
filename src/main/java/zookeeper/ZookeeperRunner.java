@@ -2,6 +2,8 @@ package zookeeper;
 
 public class ZookeeperRunner {
 
+    private static final String node = "/z";
+
     public static void main(String[] args) {
         if (args.length == 0) {
             System.out.println("Program usage: java -jar zookeeper-homework.jar connect_string other_args...");
@@ -11,7 +13,7 @@ public class ZookeeperRunner {
 
             final String connectString = args[0];
 
-            final WatcherLauncher watcherLauncher = new WatcherLauncher(connectString, "/z", commands);
+            final WatcherLauncher watcherLauncher = new WatcherLauncher(connectString, node, commands);
             watcherLauncher.start();
         }
     }

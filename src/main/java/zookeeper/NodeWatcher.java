@@ -39,14 +39,10 @@ public class NodeWatcher implements Watcher {
     public final void process(WatchedEvent watchedEvent) {
         if (isTypeNoneAndStateExpired(watchedEvent)) {
             closeEvent();
-        } else if (isTypeNodeCreatedOrNodeDeleted(watchedEvent)) {
-            if (Objects.equals(node, watchedEvent.getPath())) {
-                watchForExistingNode();
-            }
-        } else if (isTypeNodeChildrenChanged(watchedEvent)) {
-            if (Objects.equals(node, watchedEvent.getPath())) {
-                watchForChildren();
-            }
+        } else if (isTypeNodeCreatedOrNodeDeleted(watchedEvent) && isNodeEqualToEventPath(watchedEvent)) {
+            watchForExistingNode();
+        } else if (isTypeNodeChildrenChanged(watchedEvent) && isNodeEqualToEventPath(watchedEvent)) {
+            watchForChildren();
         }
     }
 
@@ -64,6 +60,10 @@ public class NodeWatcher implements Watcher {
 
     private boolean isTypeNodeChildrenChanged(WatchedEvent watchedEvent) {
         return watchedEvent.getType() == NodeChildrenChanged;
+    }
+
+    private boolean isNodeEqualToEventPath(WatchedEvent watchedEvent) {
+        return Objects.equals(node, watchedEvent.getPath());
     }
 
     private void printTreeForNode(String node) {

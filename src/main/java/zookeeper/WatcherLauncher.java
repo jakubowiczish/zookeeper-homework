@@ -27,7 +27,7 @@ public class WatcherLauncher implements Launcher {
         final NodeListener nodeListener = createNodeListener();
         final NodeWatcher nodeWatcher = new NodeWatcher(connectString, node, nodeListener);
 
-        System.out.println("App started running");
+        System.out.println("App started running!");
 
         handleUserInput(nodeWatcher);
     }
@@ -87,12 +87,12 @@ public class WatcherLauncher implements Launcher {
         final Scanner scanner = new Scanner(System.in);
 
         while (true) {
-            final String line = scanner.nextLine();
+            final String inputLine = scanner.nextLine();
 
-            if ("tree".equals(line)) {
-                System.out.println("Printing tree:");
+            if ("tree".equals(inputLine)) {
+                System.out.println("Printing the tree of nodes below:");
                 nodeWatcher.printTreeForNode();
-            } else if ("exit".equals(line)) {
+            } else if ("exit".equals(inputLine)) {
                 stopProcess();
                 System.exit(0);
             }
