@@ -5,126 +5,135 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.Stat;
 
+import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 
-import static java.lang.System.out;
-import static org.apache.zookeeper.KeeperException.Code.NONODE;
-import static org.apache.zookeeper.Watcher.Event.EventType.*;
-import static org.apache.zookeeper.Watcher.Event.KeeperState.Expired;
+import static zookeeper.Util.print;
+import static zookeeper.Util.printErr;
 
 public class NodeWatcher implements Watcher {
 
-    private static final int sessionTimeout = 5000;
+    private static final int SESSION_TIMEOUT = 5000;
 
-    private final String node;
-    private final NodeListener nodeListener;
+    private final String rootNode;
+    private final String processName;
 
     private final ZooKeeper zooKeeper;
 
+    private Process process;
+    private boolean isProcessRunning = false;
+
     @SneakyThrows
-    public NodeWatcher(final String connectString,
-                       final String node,
-                       final NodeListener nodeListener) {
+    public NodeWatcher(final String connectString, final String rootNode, final String processName) {
+        this.rootNode = rootNode;
+        this.processName = processName;
 
-        this.node = node;
-        this.nodeListener = nodeListener;
+        zooKeeper = new ZooKeeper(connectString, SESSION_TIMEOUT, this);
+        print("Program has started");
+        watchFor(rootNode);
+    }
 
-        zooKeeper = new ZooKeeper(connectString, sessionTimeout, this);
-        watchForExistingNode();
+    private void watchFor(String node) {
+        try {
+            if (exists(node)) {
+                List<String> children = zooKeeper.getChildren(node, true);
+                children.stream()
+                        .map(child -> node + "/" + child)
+                        .forEach(this::watchFor);
+            }
+        } catch (InterruptedException e) {
+            printErr(e);
+        } catch (KeeperException e) {
+            print("Server is now unreachable");
+        }
     }
 
     @Override
-    public final void process(WatchedEvent watchedEvent) {
-        if (isTypeNoneAndStateExpired(watchedEvent)) {
-            closeEvent();
-        } else if (isTypeNodeCreatedOrNodeDeleted(watchedEvent) && isNodeEqualToEventPath(watchedEvent)) {
-            watchForExistingNode();
-        } else if (isTypeNodeChildrenChanged(watchedEvent) && isNodeEqualToEventPath(watchedEvent)) {
-            watchForChildren();
+    public void process(WatchedEvent event) {
+        watchFor(rootNode);
+
+        switch (event.getType()) {
+            case NodeCreated: {
+                if (rootNode.equals(event.getPath()))
+                    startNamedProcess();
+                break;
+            }
+
+            case NodeDeleted: {
+                if (rootNode.equals(event.getPath()))
+                    destroyNamedProcess();
+                break;
+            }
+
+            case NodeChildrenChanged: {
+                int count = countChildren(rootNode);
+                print("The node: " + rootNode + " has now " + count + " descendants.");
+                break;
+            }
         }
     }
 
-    public final void printTreeForNode() {
-        printTreeForNode(this.node);
-    }
-
-    private boolean isTypeNoneAndStateExpired(WatchedEvent watchedEvent) {
-        return watchedEvent.getType() == None && watchedEvent.getState() == Expired;
-    }
-
-    private boolean isTypeNodeCreatedOrNodeDeleted(WatchedEvent watchedEvent) {
-        return watchedEvent.getType() == NodeCreated || watchedEvent.getType() == NodeDeleted;
-    }
-
-    private boolean isTypeNodeChildrenChanged(WatchedEvent watchedEvent) {
-        return watchedEvent.getType() == NodeChildrenChanged;
-    }
-
-    private boolean isNodeEqualToEventPath(WatchedEvent watchedEvent) {
-        return Objects.equals(node, watchedEvent.getPath());
-    }
-
-    private void printTreeForNode(String node) {
-        out.println(node);
+    public int countChildren(String node) {
+        int childrenCounter = 0;
 
         try {
-            final Stat stat = zooKeeper.exists(node, false);
+            if (exists(node)) {
+                List<String> children = zooKeeper.getChildren(node, true);
+                childrenCounter += children.size();
+                for (String child : children) {
+                    childrenCounter += countChildren(node + "/" + child);
+                }
+            }
+        } catch (KeeperException | InterruptedException e) {
+            print("Problem with counting number of children");
+            printErr(e);
+        }
 
-            if (stat != null) {
-                List<String> children = zooKeeper.getChildren(node, false);
+        return childrenCounter;
+    }
 
+    public void printTree(String node) {
+        print(node);
+
+        try {
+            if (exists(node)) {
+                List<String> children = zooKeeper.getChildren(node, true);
                 children.stream()
                         .map(child -> node + "/" + child)
-                        .forEach(this::printTreeForNode);
+                        .forEach(this::printTree);
             }
-        } catch (KeeperException e) {
-            closeEvent();
-            out.println(e.getLocalizedMessage());
-        } catch (InterruptedException e) {
-            out.println(e.getLocalizedMessage());
+        } catch (KeeperException | InterruptedException e) {
+            print("Problem with printing the tree of nodes");
+            printErr(e);
         }
     }
 
+    public void startNamedProcess() {
+        if (isProcessRunning) return;
 
-    private void closeEvent() {
-        nodeListener.closed();
-    }
-
-    private void watchForExistingNode() {
+        print("Starting the process: " + processName);
+        ProcessBuilder pb = new ProcessBuilder(processName);
         try {
-            final Stat stat = zooKeeper.exists(node, true);
-
-            boolean isStatNotNull = stat != null;
-            nodeListener.changed(isStatNotNull);
-
-            if (stat != null) {
-                watchForChildren();
-            }
-
-        } catch (KeeperException e) {
-            closeEvent();
-            out.println(e.getLocalizedMessage());
-        } catch (InterruptedException e) {
-            out.println(e.getLocalizedMessage());
+            process = pb.start();
+            isProcessRunning = true;
+        } catch (IOException e) {
+            print("Problem with starting the process: " + processName);
+            printErr(e);
         }
     }
 
-    private void watchForChildren() {
-        try {
-            List<String> children = zooKeeper.getChildren(node, true);
-            nodeListener.childrenChanged(children);
+    public void destroyNamedProcess() {
+        if (!isProcessRunning) return;
 
-        } catch (KeeperException e) {
-            if (e.code() != NONODE) {
-                closeEvent();
-                out.println(e.getLocalizedMessage());
-            }
-        } catch (InterruptedException e) {
-            out.println(e.getLocalizedMessage());
-        }
+        print("Killing the process: " + processName);
+        process.destroy();
+        isProcessRunning = false;
+    }
+
+    @SneakyThrows
+    private boolean exists(String node) {
+        return zooKeeper.exists(node, true) != null;
     }
 
 }

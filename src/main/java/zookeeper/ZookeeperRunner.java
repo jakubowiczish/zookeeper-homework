@@ -1,24 +1,42 @@
 package zookeeper;
 
-import static java.lang.System.out;
+import java.util.Scanner;
+
+import static zookeeper.Util.print;
 
 public class ZookeeperRunner {
 
-    private static final String NODE = "/z";
-
-    private static final String PROGRAM_USAGE_HELP_MESSAGE = "Program usage: java -jar zookeeper-homework.jar connect_string other_args...";
+    private static final String PROGRAM_USAGE_HELP_MESSAGE = "Program usage: java -jar zookeeper-homework.jar connect_string process_name";
 
     public static void main(String[] args) {
         if (args.length == 0) {
-            out.println(PROGRAM_USAGE_HELP_MESSAGE);
-        } else {
-            final String[] commands = new String[args.length - 1];
-            System.arraycopy(args, 1, commands, 0, commands.length);
+            print(PROGRAM_USAGE_HELP_MESSAGE);
+            return;
+        }
 
-            final String connectString = args[0];
+        final String rootNode = "/z";
+        final String connectString = args[0];
+        final String processName = args[1];
 
-            final WatcherLauncher watcherLauncher = new WatcherLauncher(connectString, NODE, commands);
-            watcherLauncher.start();
+        final NodeWatcher nodeWatcher = new NodeWatcher(connectString, rootNode, processName);
+        handleUserInput(rootNode, nodeWatcher);
+    }
+
+    private static void handleUserInput(final String rootNode, final NodeWatcher nodeWatcher) {
+        final Scanner scanner = new Scanner(System.in);
+
+        while (true) {
+            final String line = scanner.nextLine();
+
+            if ("tree".equals(line)) {
+                nodeWatcher.printTree(rootNode);
+            } else if ("exit".equals(line)) {
+                nodeWatcher.destroyNamedProcess();
+                break;
+            } else {
+                print("Unknown command. List of available commands: tree, exit");
+            }
         }
     }
+
 }
